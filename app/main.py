@@ -1,9 +1,13 @@
-from fastapi import FastAPI, status, HTTPException, Response
+from fastapi import FastAPI, status, HTTPException, Response, Depends
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
 from pydantic import BaseModel
+from . import models
+from .database import engine, get_db
+from sqlalchemy.orm import Session
 
+models.Base.metadata.create_all(bind=engine)
 
 class Tweet(BaseModel):
     content: str
@@ -33,6 +37,10 @@ while True:
 @app.get('/')
 def root():
     return {"Message": "Hello World"}
+
+@app.get("/sqlalchemy")
+def test_tweets(db: Session = Depends(get_db)):
+    return {"status": "success"}
 
 
 @app.get("/tweets")
