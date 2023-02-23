@@ -1,19 +1,20 @@
-from fastapi import FastAPI, status, HTTPException, Response, Depends
+from fastapi import FastAPI
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import time
-from pydantic import BaseModel
 from . import models
-from .database import engine, get_db
-from sqlalchemy.orm import Session
-from .models import Base, Tweet
+from .database import engine
+from .routers import tweet, user, auth
+
 
 models.Base.metadata.create_all(bind=engine)
 
-class TweetIn(BaseModel):
-    content: str
 
 app = FastAPI()
+
+app.include_router(tweet.router)
+app.include_router(user.router)
+app.include_router(auth.router)
 
 
 # Attempt to connec to database every 5 seconds
@@ -38,60 +39,3 @@ while True:
 @app.get('/')
 def root():
     return {"Message": "Hello World"}
-
-
-
-@app.get("/tweets")
-def get_tweets(db: Session = Depends(get_db)):
-    tweets = db.query(Tweet).all()
-    return {"tweets": tweets}
-
-
-@app.get("/tweets/{id}")
-def get_tweet(id: int, db: Session = Depends(get_db)):
-    tweet = db.query(Tweet).where(Tweet.id==id).first()
-    return {"tweet": tweet}
-
-
-@app.post("/tweets", status_code=status.HTTP_201_CREATED)
-def create_tweet(tweet: TweetIn, db: Session = Depends(get_db)):
-    new_tweet = Tweet(**tweet.dict())
-    db.add(new_tweet)
-    db.commit()
-    db.refresh(new_tweet)
-    return {"data": new_tweet}
-
-
-@app.delete("/tweets/{id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_tweet(id: int, db: Session = Depends(get_db)):
-    tweet_query = db.query(Tweet).where(Tweet.id == id)
-    tweet = tweet_query.first()
-
-    if tweet == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"tweet with id: {id} does not exist"
-        )
-    
-    tweet_query.delete(synchronize_session=False)
-    db.commit()
-    return Response(status_code=status.HTTP_204_NO_CONTENT)
-
-
-@app.put("/tweets/{id}")
-def update_tweet(id: int, updated_tweet: TweetIn, db: Session = Depends(get_db)):
-    tweet_query = db.query(Tweet).where(Tweet.id == id)
-    tweet = tweet_query.first()
-
-    if tweet == None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Tweet with id: {id} does not exist"
-        )
-    
-    tweet_query.update(
-        updated_tweet.dict(),
-        synchronize_session=False
-    )
-    db.commit()
-    return tweet_query.first()
