@@ -16,7 +16,6 @@ router = APIRouter(
 
 @router.get("/", response_model=List[TweetOut])
 def get_tweets(db: Session = Depends(get_db)):
-    print('hello')
     tweets = db.query(Tweet, func.count(Like.tweet_id).label("likes")).join(Like, Like.tweet_id == Tweet.id, isouter=True).group_by(Tweet.id).all()
     return tweets
 
