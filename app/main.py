@@ -22,4 +22,4 @@ app.include_router(like.router)
 
 @app.get('/')
 def root():
-    return {"Message": "Hello World"}
+    return {"Message": "Changes pushed to production"}
