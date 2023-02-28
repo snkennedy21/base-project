@@ -1,16 +1,10 @@
 import { useEffect } from "react";
+import { useGetAllTweetsQuery } from "../store/mainApi";
 
 function Test() {
-  useEffect(() => {
-    async function fetchData() {
-      const url = `${process.env.REACT_APP_BASE_URL}/tweets`;
-      console.log(url);
-      const response = await fetch(url);
-      const data = await response.json();
-      console.log(data);
-    }
-    fetchData();
-  }, []);
+  const { data: tweets } = useGetAllTweetsQuery();
+
+  console.log(tweets);
 
   return <div>{`${process.env.REACT_APP_BASE_URL}`}</div>;
 }
